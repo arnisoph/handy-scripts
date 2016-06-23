@@ -1,0 +1,83 @@
+# This script is based on
+#
+# * https://gist.github.com/treydock/9220796
+# * https://gist.github.com/treydock/9220870
+#
+#
+# Usage:
+#
+# su -l foreman -s /bin/bash -c "/usr/share/foreman/bin/rails runner --environment=production /var/tmp/foreman_check_dns.rb"
+
+Host.all.each do |host|
+
+  next unless host.dns?
+
+  dns_a_record = host.dns_a_record
+
+  if dns_a_record.valid?
+#    puts "VALID"
+  elsif dns_a_record.conflicting?
+    print "CONFLICT: #{host}: Expected: #{dns_a_record.attrs.inspect} | Actual: #{dns_a_record.conflicts.map{|c| c.attrs.inspect}.join(', ')}"
+  else
+    print "MISSING: #{host}: Expected: #{dns_a_record.attrs.inspect}"
+#    dns_a_record.create
+#    puts "DONE"
+  end
+
+  next unless host.reverse_dns?
+  dns_ptr_record = host.dns_ptr_record
+
+  if dns_ptr_record.valid?
+#    puts "VALID"
+  elsif dns_ptr_record.conflicting?
+    print "CONFLICT: #{host}: Expected: #{dns_ptr_record.attrs.inspect} | Actual: #{dns_ptr_record.conflicts.map{|c| c.attrs.inspect}.join(', ')}"
+  else
+    print "MISSING #{host}: Expected: #{dns_ptr_record.attrs.inspect}"
+#    dns_ptr_record.create
+#    puts "DONE"
+  end
+
+  next
+
+#  host.interfaces.each do |interface|
+#    next unless interface.dns?
+#
+#    dns_a_record = interface.dns_a_record
+#    # Workaround for http://projects.theforeman.org/issues/2750
+#    dns_a_record.hostname = "#{interface.name}.#{interface.domain.name}"
+#    print "#{dns_a_record}..."
+#
+#    if dns_a_record.valid?
+#      puts "VALID"
+#    elsif dns_a_record.conflicting?
+#      puts "CONFLICT"
+#      warn "not going to do anything as we found conflicting dns A records"
+#      warn "we wanted #{dns_a_record.attrs.inspect} but found: #{dns_a_record.conflicts.map{|c| c.attrs.inspect}.join(', ')}"
+#    else
+#      print "missing..recreating.."
+#      dns_a_record.create
+#      puts "DONE"
+#    end
+#
+#    next unless interface.reverse_dns?
+#
+#    dns_ptr_record = interface.dns_ptr_record
+#    # Workaround for http://projects.theforeman.org/issues/2750
+#    dns_ptr_record.hostname = "#{interface.name}.#{interface.domain.name}"
+#    print "#{dns_ptr_record}..."
+#
+#    if dns_ptr_record.valid?
+#      puts "VALID"
+#    elsif dns_ptr_record.conflicting?
+#      puts "CONFLICT"
+#      warn "not going to do anything as we found conflicting dns PTR records"
+#      warn "we wanted #{dns_ptr_record.attrs.inspect} but found: #{dns_ptr_record.conflicts.map{|c| c.attrs.inspect}.join(', ')}"
+#    else
+#      print "missing..recreating.."
+#      dns_ptr_record.create
+#      puts "DONE"
+#    end
+#  end
+end
+
+print "\n\nDONE\n"
